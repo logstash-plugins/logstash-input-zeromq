@@ -8,7 +8,7 @@ require "socket"
 # You need to have the 0mq 2.1.x library installed to be able to use
 # this input plugin.
 #
-# The default settings will create a subscriber binding to tcp://127.0.0.1:2120 
+# The default settings will create a subscriber binding to `tcp://127.0.0.1:2120` 
 # waiting for connecting publishers.
 #
 class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
@@ -27,18 +27,19 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
 
   # 0mq topology
   # The default logstash topologies work as follows:
+  #
   # * pushpull - inputs are pull, outputs are push
   # * pubsub - inputs are subscribers, outputs are publishers
   # * pair - inputs are clients, inputs are servers
   #
   # If the predefined topology flows don't work for you,
-  # you can change the 'mode' setting
+  # you can change the `mode` setting
   # TODO (lusis) add req/rep MAYBE
   # TODO (lusis) add router/dealer
   config :topology, :validate => ["pushpull", "pubsub", "pair"], :required => true
 
   # 0mq topic
-  # This is used for the 'pubsub' topology only
+  # This is used for the `pubsub` topology only
   # On inputs, this allows you to filter messages by topic
   # On outputs, this allows you to tag a message for routing
   # NOTE: ZeroMQ does subscriber side filtering.
@@ -54,20 +55,21 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
   # sender
   # overrides the sender to 
   # set the source of the event
-  # default is "zmq+topology://type/"
+  # default is `zmq+topology://type/`
   config :sender, :validate => :string
 
   # 0mq socket options
-  # This exposes zmq_setsockopt
+  # This exposes `zmq_setsockopt`
   # for advanced tuning
   # see http://api.zeromq.org/2-1:zmq-setsockopt for details
   #
   # This is where you would set values like:
-  # ZMQ::HWM - high water mark
-  # ZMQ::IDENTITY - named queues
-  # ZMQ::SWAP_SIZE - space for disk overflow
   #
-  # example: sockopt => ["ZMQ::HWM", 50, "ZMQ::IDENTITY", "my_named_queue"]
+  #  * `ZMQ::HWM` - high water mark
+  #  * `ZMQ::IDENTITY` - named queues
+  #  * `ZMQ::SWAP_SIZE` - space for disk overflow
+  #
+  # example: `sockopt => ["ZMQ::HWM", 50, "ZMQ::IDENTITY", "my_named_queue"]`
   config :sockopt, :validate => :hash
 
   public

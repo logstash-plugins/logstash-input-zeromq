@@ -14,7 +14,6 @@ require "socket"
 class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
 
   config_name "zeromq"
-  milestone 2
 
   default :codec, "json"
 

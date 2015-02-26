@@ -114,7 +114,11 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
   end # def register
 
   def teardown
-    error_check(@zsocket.close, "while closing the zmq socket")
+    begin
+      error_check(@zsocket.close, "while closing the zmq socket")
+    rescue RuntimeError => e
+      @logger.error("Failed to properly teardown ZeroMQ")
+    end
   end # def teardown
 
   def server?

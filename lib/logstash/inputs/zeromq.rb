@@ -71,6 +71,10 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
   # example: `sockopt => ["ZMQ::HWM", 50, "ZMQ::IDENTITY", "my_named_queue"]`
   config :sockopt, :validate => :hash
 
+  # Defines if zeromq return code EAGAIN is an error
+  # May be used e.g. if ZMQ::RCVTIMEO is set
+  config :eagain_not_error, :validate => :boolean, :default => false
+
   public
   def register
     require "ffi-rzmq"
@@ -133,24 +137,26 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
         # Get the first part as the msg
         m1 = ""
         rc = @zsocket.recv_string(m1)
-        error_check(rc, "in recv_string")
-        @logger.debug("ZMQ receiving", :event => m1)
-        msg = m1
-        # If we have more parts, we'll eat the first as the topic
-        # and set the message to the second part
-        if @zsocket.more_parts?
-          @logger.debug("Multipart message detected. Setting @message to second part. First part was: #{m1}")
-          m2 = ''
-          rc2 = @zsocket.recv_string(m2)
-          error_check(rc2, "in recv_string")
-          @logger.debug("ZMQ receiving", :event => m2)
-          msg = m2
-        end
+        error_check(rc, "in recv_string", @eagain_not_error)
+        if ZMQ::Util.resultcode_ok?(rc)
+          @logger.debug("ZMQ receiving", :event => m1)
+          msg = m1
+          # If we have more parts, we'll eat the first as the topic
+          # and set the message to the second part
+          if @zsocket.more_parts?
+            @logger.debug("Multipart message detected. Setting @message to second part. First part was: #{m1}")
+            m2 = ''
+            rc2 = @zsocket.recv_string(m2)
+            error_check(rc2, "in recv_string", @eagain_not_error)
+            @logger.debug("ZMQ receiving", :event => m2)
+            msg = m2
+          end
 
-        @codec.decode(msg) do |event|
-          event["host"] ||= host
-          decorate(event)
-          output_queue << event
+          @codec.decode(msg) do |event|
+            event["host"] ||= host
+            decorate(event)
+            output_queue << event
+          end
         end
       end
     rescue LogStash::ShutdownSignal

@@ -77,6 +77,8 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
     require "logstash/util/zeromq"
     self.class.send(:include, LogStash::Util::ZeroMQ)
 
+    @run_mutex = Mutex.new
+    @run       = true
     case @topology
     when "pair"
       zmq_const = ZMQ::PAIR 
@@ -114,7 +116,9 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
   end # def register
 
   def teardown
+    @run_mutex.synchronize{@run = false}
     error_check(@zsocket.close, "while closing the zmq socket")
+    context.terminate
   end # def teardown
 
   def server?
@@ -124,12 +128,12 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
   def run(output_queue)
     host = Socket.gethostname
     begin
-      loop do
+      while !stop?
         # Here's the unified receiver
         # Get the first part as the msg
         m1 = ""
-        rc = @zsocket.recv_string(m1)
-        error_check(rc, "in recv_string")
+        rc = @zsocket.recv_string(m1, ZMQ::DONTWAIT)
+        next if rc == -1 && ZMQ::Util.errno == ZMQ::EAGAIN
         @logger.debug("ZMQ receiving", :event => m1)
         msg = m1
         # If we have more parts, we'll eat the first as the topic
@@ -142,7 +146,6 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
           @logger.debug("ZMQ receiving", :event => m2)
           msg = m2
         end
-
         @codec.decode(msg) do |event|
           event["host"] ||= host
           decorate(event)
@@ -163,4 +166,9 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
   def build_source_string
     id = @address.first.clone
   end
+
+  def stop?
+    !@run
+  end
+
 end # class LogStash::Inputs::ZeroMQ

@@ -77,8 +77,6 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
     require "logstash/util/zeromq"
     self.class.send(:include, LogStash::Util::ZeroMQ)
 
-    @run_mutex = Mutex.new
-    @run       = true
     case @topology
     when "pair"
       zmq_const = ZMQ::PAIR 
@@ -116,7 +114,6 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
   end # def register
 
   def close
-    @run_mutex.synchronize{@run = false}
     error_check(@zsocket.close, "while closing the zmq socket")
     context.terminate
   end # def close
@@ -134,6 +131,8 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
         m1 = ""
         rc = @zsocket.recv_string(m1, ZMQ::DONTWAIT)
         next if rc == -1 && ZMQ::Util.errno == ZMQ::EAGAIN
+        error_check(rc, "in recv_string")
+
         @logger.debug("ZMQ receiving", :event => m1)
         msg = m1
         # If we have more parts, we'll eat the first as the topic
@@ -152,9 +151,6 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
           output_queue << event
         end
       end
-    rescue LogStash::ShutdownSignal
-      # shutdown
-      return
     rescue => e
       @logger.debug("ZMQ Error", :subscriber => @zsocket,
                     :exception => e)
@@ -165,10 +161,6 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
   private
   def build_source_string
     id = @address.first.clone
-  end
-
-  def stop?
-    !@run
   end
 
 end # class LogStash::Inputs::ZeroMQ

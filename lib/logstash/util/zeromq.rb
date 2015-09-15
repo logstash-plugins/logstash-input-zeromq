@@ -3,13 +3,12 @@ require 'ffi-rzmq'
 require "logstash/namespace"
 
 module LogStash::Util::ZeroMQ
-  CONTEXT = ZMQ::Context.new
   # LOGSTASH-400
   # see https://github.com/chuckremes/ffi-rzmq/blob/master/lib/ffi-rzmq/socket.rb#L93-117
   STRING_OPTS = %w{IDENTITY SUBSCRIBE UNSUBSCRIBE}
 
   def context
-    CONTEXT
+    @context ||= ZMQ::Context.new
   end
 
   def setup(socket, address)

@@ -14,6 +14,14 @@ describe LogStash::Inputs::ZeroMQ, :zeromq => true do
       expect { plugin.close }.to_not raise_error
     end
 
-  end
+    context "when interrupting the plugin" do
+      it_behaves_like "an interruptible input plugin" do
+        let(:config) { { "topology" => "pushpull" } }
+        after do
+          subject.close
+        end
+      end
+    end
 
+  end
 end

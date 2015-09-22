@@ -23,7 +23,7 @@ module ZeroMQHelpers
     result = size.times.inject([]) do |acc|
       acc << queue.pop
     end
-    plugin.teardown
+    plugin.close
     pipeline_thread.join
     result
   end # def input

@@ -115,11 +115,11 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
 
   end # def register
 
-  def teardown
+  def close
     @run_mutex.synchronize{@run = false}
     error_check(@zsocket.close, "while closing the zmq socket")
     context.terminate
-  end # def teardown
+  end # def close
 
   def server?
     @mode == "server"

@@ -3,13 +3,7 @@ require "logstash/devutils/rspec/spec_helper"
 require "logstash/inputs/zeromq"
 require_relative "support/client"
 
-module ZeroMQHelpers
-
-  def setup_clients(number_of_clients, port)
-    number_of_clients.times.inject([]) do |clients|
-      clients << ZeroMQClient.new(localhost, port)
-    end
-  end
+class ZeroMQHelpers
 
   def input(config, size, &block)
     plugin = LogStash::Plugin.lookup("input", "zeromq").new(config)
@@ -31,7 +25,6 @@ module ZeroMQHelpers
 end
 
 RSpec.configure do |config|
-  config.include ZeroMQHelpers
   config.filter_run_excluding({ :zeromq => true, :integration => true })
   config.order = :random
 end

@@ -113,9 +113,10 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
 
   end # def register
 
-  def teardown
+  def close
     error_check(@zsocket.close, "while closing the zmq socket")
-  end # def teardown
+    context.terminate
+  end # def close
 
   def server?
     @mode == "server"
@@ -124,12 +125,14 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
   def run(output_queue)
     host = Socket.gethostname
     begin
-      loop do
+      while !stop?
         # Here's the unified receiver
         # Get the first part as the msg
         m1 = ""
-        rc = @zsocket.recv_string(m1)
+        rc = @zsocket.recv_string(m1, ZMQ::DONTWAIT)
+        next if rc == -1 && ZMQ::Util.errno == ZMQ::EAGAIN
         error_check(rc, "in recv_string")
+
         @logger.debug("ZMQ receiving", :event => m1)
         msg = m1
         # If we have more parts, we'll eat the first as the topic
@@ -142,16 +145,12 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
           @logger.debug("ZMQ receiving", :event => m2)
           msg = m2
         end
-
         @codec.decode(msg) do |event|
           event["host"] ||= host
           decorate(event)
           output_queue << event
         end
       end
-    rescue LogStash::ShutdownSignal
-      # shutdown
-      return
     rescue => e
       @logger.debug("ZMQ Error", :subscriber => @zsocket,
                     :exception => e)
@@ -163,4 +162,5 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
   def build_source_string
     id = @address.first.clone
   end
+
 end # class LogStash::Inputs::ZeroMQ

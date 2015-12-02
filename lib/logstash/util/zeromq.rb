@@ -20,8 +20,8 @@ module LogStash::Util::ZeroMQ
     @logger.info("0mq: #{server? ? 'connected' : 'bound'}", :address => address)
   end
 
-  def error_check(rc, doing)
-    unless ZMQ::Util.resultcode_ok?(rc)
+  def error_check(rc, doing, eagain_not_error = false)
+    unless ZMQ::Util.resultcode_ok?(rc) || (ZMQ::Util.errno == ZMQ::EAGAIN && eagain_not_error)
       @logger.error("ZeroMQ error while #{doing}", { :error_code => rc })
       raise "ZeroMQ Error while #{doing}"
     end

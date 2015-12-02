@@ -130,8 +130,8 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
         # Get the first part as the msg
         m1 = ""
         rc = @zsocket.recv_string(m1, ZMQ::DONTWAIT)
-        next if rc == -1 && ZMQ::Util.errno == ZMQ::EAGAIN
-        error_check(rc, "in recv_string")
+        error_check(rc, "in recv_string", true)
+        next unless ZMQ::Util.resultcode_ok?(rc)
 
         @logger.debug("ZMQ receiving", :event => m1)
         msg = m1

@@ -69,7 +69,10 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
   #  * `ZMQ::SWAP_SIZE` - space for disk overflow
   #
   # example: `sockopt => ["ZMQ::HWM", 50, "ZMQ::IDENTITY", "my_named_queue"]`
-  config :sockopt, :validate => :hash
+  #
+  # defaults to: `sockopt => ["ZMQ::RCVTIMEO", "1000"]`, which has the effect of "interrupting"
+  # the recv operation at least once every second to allow for properly shutdown handling.
+  config :sockopt, :validate => :hash, :default => [ "ZMQ::RCVTIMEO", "1000" ]
 
   public
   def register
@@ -129,7 +132,7 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
         # Here's the unified receiver
         # Get the first part as the msg
         m1 = ""
-        rc = @zsocket.recv_string(m1, ZMQ::DONTWAIT)
+        rc = @zsocket.recv_string(m1)
         error_check(rc, "in recv_string", true)
         next unless ZMQ::Util.resultcode_ok?(rc)
 
@@ -141,7 +144,7 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
           @logger.debug("Multipart message detected. Setting @message to second part. First part was: #{m1}")
           m2 = ''
           rc2 = @zsocket.recv_string(m2)
-          error_check(rc2, "in recv_string")
+          error_check(rc2, "in recv_string", true)
           @logger.debug("ZMQ receiving", :event => m2)
           msg = m2
         end

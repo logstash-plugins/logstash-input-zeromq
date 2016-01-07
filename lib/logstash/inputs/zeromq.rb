@@ -68,11 +68,16 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
   #  * `ZMQ::IDENTITY` - named queues
   #  * `ZMQ::SWAP_SIZE` - space for disk overflow
   #
-  # example: `sockopt => ["ZMQ::HWM", 50, "ZMQ::IDENTITY", "my_named_queue"]`
+  # Example:
+  # [source,ruby]
+  #     sockopt => {
+  #        "ZMQ::HWM" => 50
+  #        "ZMQ::IDENTITY"  => "my_named_queue"
+  #     }
   #
-  # defaults to: `sockopt => ["ZMQ::RCVTIMEO", "1000"]`, which has the effect of "interrupting"
+  # defaults to: `sockopt => { "ZMQ::RCVTIMEO" => "1000" }`, which has the effect of "interrupting"
   # the recv operation at least once every second to allow for properly shutdown handling.
-  config :sockopt, :validate => :hash, :default => [ "ZMQ::RCVTIMEO", "1000" ]
+  config :sockopt, :validate => :hash, :default => { "ZMQ::RCVTIMEO" => "1000" }
 
   public
   def register

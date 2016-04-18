@@ -8,7 +8,7 @@ require "socket"
 # You need to have the 0mq 2.1.x library installed to be able to use
 # this input plugin.
 #
-# The default settings will create a subscriber binding to `tcp://127.0.0.1:2120` 
+# The default settings will create a subscriber binding to `tcp://127.0.0.1:2120`
 # waiting for connecting publishers.
 #
 class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
@@ -52,7 +52,7 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
   config :mode, :validate => ["server", "client"], :default => "server"
 
   # sender
-  # overrides the sender to 
+  # overrides the sender to
   # set the source of the event
   # default is `zmq+topology://type/`
   config :sender, :validate => :string
@@ -74,12 +74,12 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
   public
   def register
     require "ffi-rzmq"
-    require "logstash/util/zeromq"
-    self.class.send(:include, LogStash::Util::ZeroMQ)
+    require "logstash/plugin_mixins/zeromq"
+    self.class.send(:include, LogStash::PluginMixins::ZeroMQ)
 
     case @topology
     when "pair"
-      zmq_const = ZMQ::PAIR 
+      zmq_const = ZMQ::PAIR
     when "pushpull"
       zmq_const = ZMQ::PULL
     when "pubsub"

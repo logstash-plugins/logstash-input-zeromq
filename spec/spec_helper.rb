@@ -32,6 +32,6 @@ end
 
 RSpec.configure do |config|
   config.include ZeroMQHelpers
-  config.filter_run_excluding({ :zeromq => true, :integration => true })
+  # config.filter_run_excluding({ :zeromq => true, :integration => true })
   config.order = :random
 end

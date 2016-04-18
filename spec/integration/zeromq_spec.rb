@@ -5,6 +5,8 @@ require "logstash/event"
 
 describe LogStash::Inputs::ZeroMQ, :integration => true do
 
+  let(:helpers) { ZeroMQHelpers.new }
+
   describe "receive events" do
 
     let(:nevents)  { 10 }
@@ -16,7 +18,7 @@ describe LogStash::Inputs::ZeroMQ, :integration => true do
     end
 
     let(:events) do
-      input(conf, nevents) do
+      helpers.input(conf, nevents) do
         client = ZeroMQClient.new("127.0.0.1", port)
         nevents.times do |value|
           client.send("data #{value}")

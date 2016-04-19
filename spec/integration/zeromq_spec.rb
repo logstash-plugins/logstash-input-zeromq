@@ -2,6 +2,7 @@
 require_relative "../spec_helper"
 require "logstash/plugin"
 require "logstash/event"
+require "json"
 
 describe LogStash::Inputs::ZeroMQ, :integration => true do
 
@@ -21,7 +22,8 @@ describe LogStash::Inputs::ZeroMQ, :integration => true do
       helpers.input(conf, nevents) do
         client = ZeroMQClient.new("127.0.0.1", port)
         nevents.times do |value|
-          client.send("data #{value}")
+          client.send("TOPIC", ZMQ::SNDMORE)
+          client.send({"message" => "data #{value}"}.to_json)
         end
         client.close
       end
@@ -29,6 +31,7 @@ describe LogStash::Inputs::ZeroMQ, :integration => true do
 
     it "should receive the events" do
       expect(events.count).to be(nevents)
+      expect(events.map(&:to_hash)).to all(include("topic" => "TOPIC"))
     end
   end
 end

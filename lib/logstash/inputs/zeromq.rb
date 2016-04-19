@@ -46,6 +46,12 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
   # You can specify multiple topics here
   config :topic, :validate => :array
 
+  # Event topic field
+  # This is used for the `pubsub` topology only
+  # When a message is received on a topic, the topic name on which
+  # the message was received will saved in this field.
+  config :topic_field, :validate => :string, :default => "topic"
+
   # mode
   # server mode binds/listens
   # client mode connects
@@ -84,7 +90,11 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
     require "ffi-rzmq"
     require "logstash/plugin_mixins/zeromq"
     self.class.send(:include, LogStash::PluginMixins::ZeroMQ)
+    @host = Socket.gethostname
+    init_socket
+  end # def register
 
+  def init_socket
     case @topology
     when "pair"
       zmq_const = ZMQ::PAIR
@@ -118,8 +128,7 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
         end
       end
     end
-
-  end # def register
+  end
 
   def close
     begin
@@ -135,33 +144,9 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
   end # def server?
 
   def run(output_queue)
-    host = Socket.gethostname
     begin
       while !stop?
-        # Here's the unified receiver
-        # Get the first part as the msg
-        m1 = ""
-        rc = @zsocket.recv_string(m1)
-        error_check(rc, "in recv_string", true)
-        next unless ZMQ::Util.resultcode_ok?(rc)
-
-        @logger.debug? && @logger.debug("ZMQ receiving", :event => m1)
-        msg = m1
-        # If we have more parts, we'll eat the first as the topic
-        # and set the message to the second part
-        if @zsocket.more_parts?
-          @logger.debug? && @logger.debug("Multipart message detected. Setting @message to second part. First part was: #{m1}")
-          m2 = ''
-          rc2 = @zsocket.recv_string(m2)
-          error_check(rc2, "in recv_string", true)
-          @logger.debug? && @logger.debug("ZMQ receiving", :event => m2)
-          msg = m2
-        end
-        @codec.decode(msg) do |event|
-          event["host"] ||= host
-          decorate(event)
-          output_queue << event
-        end
+        handle_message(output_queue)
       end
     rescue => e
       @logger.debug? && @logger.debug("ZMQ Error", :subscriber => @zsocket,
@@ -175,4 +160,27 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
     id = @address.first.clone
   end
 
+  def handle_message(output_queue)
+    # Here's the unified receiver
+    more = true
+    parts = []
+    rc = @zsocket.recv_strings(parts)
+    error_check(rc, "in recv_strings", true)
+    return unless ZMQ::Util.resultcode_ok?(rc)
+
+    if @topology == "pubsub" && parts.length > 1
+      # assume topic is a simple string
+      topic, *parts = parts
+    else
+      topic = nil
+    end
+    parts.each do |msg|
+      @codec.decode(msg) do |event|
+        event["host"] ||= @host
+        event[@topic_field] = topic.force_encoding('UTF-8') unless topic.nil?
+        decorate(event)
+        output_queue << event
+      end
+    end
+  end
 end # class LogStash::Inputs::ZeroMQ

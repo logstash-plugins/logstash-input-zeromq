@@ -13,8 +13,8 @@ class ZeroMQClient
     @requester.connect("tcp://#{addr}:#{port}")
   end
 
-  def send(data)
-    @requester.send_string(data)
+  def send(data, flags=0)
+    @requester.send_string(data, flags)
   end
 
   def close

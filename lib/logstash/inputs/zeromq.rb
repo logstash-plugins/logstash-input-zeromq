@@ -145,16 +145,16 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
         error_check(rc, "in recv_string", true)
         next unless ZMQ::Util.resultcode_ok?(rc)
 
-        @logger.debug("ZMQ receiving", :event => m1)
+        @logger.debug? && @logger.debug("ZMQ receiving", :event => m1)
         msg = m1
         # If we have more parts, we'll eat the first as the topic
         # and set the message to the second part
         if @zsocket.more_parts?
-          @logger.debug("Multipart message detected. Setting @message to second part. First part was: #{m1}")
+          @logger.debug? && @logger.debug("Multipart message detected. Setting @message to second part. First part was: #{m1}")
           m2 = ''
           rc2 = @zsocket.recv_string(m2)
           error_check(rc2, "in recv_string", true)
-          @logger.debug("ZMQ receiving", :event => m2)
+          @logger.debug? && @logger.debug("ZMQ receiving", :event => m2)
           msg = m2
         end
         @codec.decode(msg) do |event|
@@ -164,7 +164,7 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
         end
       end
     rescue => e
-      @logger.debug("ZMQ Error", :subscriber => @zsocket,
+      @logger.debug? && @logger.debug("ZMQ Error", :subscriber => @zsocket,
                     :exception => e)
       retry
     end # begin

@@ -53,10 +53,10 @@ describe LogStash::Inputs::ZeroMQ, :zeromq => true do
 
     it "should set the topic field with multiple message frames" do
       events = send_mock_messages([["topic", '{"message": "message"}', '{"message": "message2"}']])
-      expect(events.first[topic_field]).to eq("topic")
-      expect(events.first["message"]).to eq("message")
-      expect(events[1]["message"]).to eq("message2")
-      expect(events[1][topic_field]).to eq("topic")
+      expect(events.first.get(topic_field)).to eq("topic")
+      expect(events.first.get("message")).to eq("message")
+      expect(events[1].get("message")).to eq("message2")
+      expect(events[1].get(topic_field)).to eq("topic")
       expect(events.length).to eq(2)
     end
   end
@@ -71,8 +71,8 @@ describe LogStash::Inputs::ZeroMQ, :zeromq => true do
 
     it "should receive multiple frames" do
       events = send_mock_messages([['{"message": "message"}', '{"message": "message2"}']])
-      expect(events.first["message"]).to eq("message")
-      expect(events[1]["message"]).to eq("message2")
+      expect(events.first.get("message")).to eq("message")
+      expect(events[1].get("message")).to eq("message2")
       expect(events.length).to eq(2)
     end
   end

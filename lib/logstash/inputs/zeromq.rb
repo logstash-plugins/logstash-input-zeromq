@@ -176,8 +176,8 @@ class LogStash::Inputs::ZeroMQ < LogStash::Inputs::Base
     end
     parts.each do |msg|
       @codec.decode(msg) do |event|
-        event["host"] ||= @host
-        event[@topic_field] = topic.force_encoding('UTF-8') unless topic.nil?
+        event.set("host", event.get("host") || @host)
+        event.set(@topic_field, topic.force_encoding('UTF-8')) unless topic.nil?
         decorate(event)
         output_queue << event
       end

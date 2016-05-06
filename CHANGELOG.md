@@ -1,3 +1,5 @@
+## 3.0.0
+  - Update the plugin to the version 2.0 of the plugin api, this change is required for Logstash 5.0 compatibility. See https://github.com/elastic/logstash/issues/5141
 # 2.1.0
   - Depend on logstash-mixin-zeromq, remove lib/logstash/util/zeromq
   - Adapt test usage to be friendly with the way we run LS core default plugins test

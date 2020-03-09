@@ -1,5 +1,6 @@
 # encoding: utf-8
 require_relative "../spec_helper"
+require "logstash/devutils/rspec/shared_examples"
 require "logstash/plugin"
 require "logstash/event"
 require "securerandom"
